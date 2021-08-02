@@ -19,6 +19,8 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     address public earnedAddress;    
     address public uniRouterAddress;
 
+    address public constant quickRouterAddress = 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;
+
     address public constant siriusAddress = address(0x00b1289f48e8d8ad1532e83a8961f6e8b5a134661d);
     address public constant wmaticAddress = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant usdcAddress = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -140,20 +142,42 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
             uint256 buyBackAmt = earnedAmt.mul(buyBackRate).div(feeMax);
             if(_earnedAddress == siriusAddress){
                 IERC20(siriusAddress).transfer(buyBackAddress, buyBackAmt);
-            }else{
-                _safeSwap(
-                    buyBackAmt,
-                    _earnedAddress == wmaticAddress ? wmaticToSiriusPath : earnedToSiriusPath,
-                    buyBackAddress
-                );
+				return;
             }
+			//Convert earned to wmatic using apeRouter if earned is not wmatic
+			if(_earnedAddress != wmaticAddress){
+			    uint256 wmaticBefore = IERC20(wmaticAddress).balanceOf(address(this));
+			    _safeSwap(
+                    buyBackAmt,
+					earnedToWmaticPath,
+                    address(this)
+                );
+				uint256 wmaticAfter = IERC20(wmaticAddress).balanceOf(address(this));
+				buyBackAmt = wmaticAfter.sub(wmaticBefore);
+			}
+			
+			//Buy SIRIUS using quick router
+            _safeSwapQuick(
+                buyBackAmt,
+                wmaticToSiriusPath,
+                buyBackAddress
+            );
+            
         }
     }
 
+
+    
     function _resetAllowances() internal virtual {
         IERC20(earnedAddress).safeApprove(uniRouterAddress, uint256(0));
         IERC20(earnedAddress).safeIncreaseAllowance(
             uniRouterAddress,
+            uint256(-1)
+        );
+		
+		IERC20(earnedAddress).safeApprove(quickRouterAddress, uint256(0));
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            quickRouterAddress,
             uint256(-1)
         );
 
@@ -166,6 +190,12 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         IERC20(wmaticAddress).safeApprove(uniRouterAddress, uint256(0));
         IERC20(wmaticAddress).safeIncreaseAllowance(
             uniRouterAddress,
+            uint256(-1)
+        );
+		
+		IERC20(wmaticAddress).safeApprove(quickRouterAddress, uint256(0));
+        IERC20(wmaticAddress).safeIncreaseAllowance(
+            quickRouterAddress,
             uint256(-1)
         );
     }
@@ -219,6 +249,23 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         uint256 amountOut = amounts[amounts.length.sub(1)];
 
         IUniRouter02(uniRouterAddress).swapExactTokensForTokens(
+            _amountIn,
+            amountOut.mul(slippageFactor).div(1000),
+            _path,
+            _to,
+            now.add(deadline)
+        );
+    }
+
+    function _safeSwapQuick(
+        uint256 _amountIn,
+        address[] memory _path,
+        address _to
+    ) internal {
+        uint256[] memory amounts = IUniRouter02(quickRouterAddress).getAmountsOut(_amountIn, _path);
+        uint256 amountOut = amounts[amounts.length.sub(1)];
+
+        IUniRouter02(quickRouterAddress).swapExactTokensForTokens(
             _amountIn,
             amountOut.mul(slippageFactor).div(1000),
             _path,
