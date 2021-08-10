@@ -59,7 +59,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public minEarnedAmountToCompound = 1e17;
     uint256 public deadline = 600;
 	
-	bool uint256 isBurning = false;
+	bool public isBurning = false;
 
     function resetAllowances() public virtual;
 
