@@ -219,7 +219,12 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         uint256 _slippageFactor,
         uint256 _liquiditySlippageFactor
     ) external virtual onlyGov {
-        require(_controllerFee.add(_rewardRate).add(_buyBackRate) <= feeMaxTotal, "Max fee of 10%");
+        if(!isBurning){		    
+			require(_controllerFee.add(_rewardRate).add(_buyBackRate) <= feeMaxTotal, "Max fee of 10%");
+		}else{
+			//Burning vaults can have up to 100% buybackRate
+			require(_controllerFee.add(_rewardRate).add(_buyBackRate) <= 10000, "Max fee of 100%");
+		}
         require(_withdrawalFee <= maxWithdrawalFee, "_withdrawFee > maxWithdrawalFee!");
         require(_slippageFactor <= slippageFactorUL, "_slippageFactor too high");
         require(_liquiditySlippageFactor <= slippageFactorUL, "_liquiditySlippageFactor too high");
