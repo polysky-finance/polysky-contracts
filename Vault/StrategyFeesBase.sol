@@ -19,6 +19,8 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     address public earnedAddress;    
     address public uniRouterAddress;
 
+    address public constant quickRouterAddress = 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;
+
     address public constant siriusAddress = address(0x00b1289f48e8d8ad1532e83a8961f6e8b5a134661d);
     address public constant wmaticAddress = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant usdcAddress = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -56,6 +58,8 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public  minWMaticAmountToCompound = 1e17;
     uint256 public minEarnedAmountToCompound = 1e17;
     uint256 public deadline = 600;
+	
+	bool uint256 isBurning = false;
 
     function resetAllowances() public virtual;
 
@@ -78,13 +82,16 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     constructor(
         address _wantAddress,
         address _earnedAddress,
-        address _uniRouterAddress
+        address _uniRouterAddress,
+		bool _isBurning
     )  public {
         govAddress = msg.sender;
 
         wantAddress = _wantAddress;
         earnedAddress = _earnedAddress;
         uniRouterAddress = _uniRouterAddress;
+		
+		isBurning = _isBurning;
 
         transferOwnership(vaultChefAddress);
     }
@@ -142,8 +149,32 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
                 IERC20(siriusAddress).transfer(buyBackAddress, buyBackAmt);
 				return;
             }
-			//Send to vault address. This is done to reduce the number of transactions on earned
-			IERC20(_earnedAddress).transfer(vaultAddress, buyBackAmt);            
+			
+			if(!isBurning){
+				//Send to vault address. Used to setup the burning vault
+				IERC20(_earnedAddress).transfer(vaultAddress, buyBackAmt);
+				return;				
+			}			
+			
+			//Convert earned to wmatic using uniRouter if earned is not wmatic
+			if(_earnedAddress != wmaticAddress){
+			    uint256 wmaticBefore = IERC20(wmaticAddress).balanceOf(address(this));
+			    _safeSwap(
+                    buyBackAmt,
+					earnedToWmaticPath,
+                    address(this)
+                );
+				uint256 wmaticAfter = IERC20(wmaticAddress).balanceOf(address(this));
+				buyBackAmt = wmaticAfter.sub(wmaticBefore);
+			}
+			
+			//Buy SIRIUS using quick router. Because our main liquidity is with quickswap and uniRouter 
+            //may not be same as quickRouter
+            _safeSwapQuick(
+                buyBackAmt,
+                wmaticToSiriusPath,
+                buyBackAddress
+            );
         }
     }
 
@@ -156,6 +187,12 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
             uint256(-1)
         );
 
+		IERC20(earnedAddress).safeApprove(quickRouterAddress, uint256(0));
+        IERC20(earnedAddress).safeIncreaseAllowance(
+            quickRouterAddress,
+            uint256(-1)
+        );
+
         IERC20(usdcAddress).safeApprove(rewardAddress, uint256(0));
         IERC20(usdcAddress).safeIncreaseAllowance(
             rewardAddress,
@@ -165,6 +202,11 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         IERC20(wmaticAddress).safeApprove(uniRouterAddress, uint256(0));
         IERC20(wmaticAddress).safeIncreaseAllowance(
             uniRouterAddress,
+            uint256(-1)
+        );
+		IERC20(wmaticAddress).safeApprove(quickRouterAddress, uint256(0));
+        IERC20(wmaticAddress).safeIncreaseAllowance(
+            quickRouterAddress,
             uint256(-1)
         );
     }
@@ -218,6 +260,23 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         uint256 amountOut = amounts[amounts.length.sub(1)];
 
         IUniRouter02(uniRouterAddress).swapExactTokensForTokens(
+            _amountIn,
+            amountOut.mul(slippageFactor).div(1000),
+            _path,
+            _to,
+            now.add(deadline)
+        );
+    }
+
+    function _safeSwapQuick(
+        uint256 _amountIn,
+        address[] memory _path,
+        address _to
+    ) internal {
+        uint256[] memory amounts = IUniRouter02(quickRouterAddress).getAmountsOut(_amountIn, _path);
+        uint256 amountOut = amounts[amounts.length.sub(1)];
+
+        IUniRouter02(quickRouterAddress).swapExactTokensForTokens(
             _amountIn,
             amountOut.mul(slippageFactor).div(1000),
             _path,

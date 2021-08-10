@@ -19,13 +19,15 @@ contract StrategySinglePolysky is StrategySingleBase {
         address _earnedAddress,
         address _uniRouterAddress,
         address _masterChef,
-        uint256 _pid
+        uint256 _pid,
+		bool _isBurning
     ) StrategySingleBase(
         _wantAddress,
         _earnedAddress,
         _uniRouterAddress,
         _masterChef,
-        _pid
+        _pid,
+		_isBurning
     ) public {
         earnedToWmaticPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D, address(0x000d500b1d8e8ef31e21c99d1db9a6444d3adf1270)];        
         earnedToUsdcPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D, address(0x002791bca1f2de4661ed88a30c99a7a9449aa84174)];

@@ -45,11 +45,13 @@ abstract contract StrategyBase is StrategyFeesBase {
         address _earnedAddress,
         address _uniRouterAddress,
         address _masterChef,
-        uint256 _pid
+        uint256 _pid,
+		bool _isBurning
     ) StrategyFeesBase(
         _wantAddress,
         _earnedAddress,
-        _uniRouterAddress
+        _uniRouterAddress,
+		_isBurning
     )  public {        
         masterChef = _masterChef;
         pid = _pid;

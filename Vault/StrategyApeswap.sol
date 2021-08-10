@@ -19,13 +19,15 @@ contract StrategyApeswap is StrategyLPBase {
         address _wantAddress,
         address _earnedAddress,
         address _masterChef,
-        uint256 _pid
+        uint256 _pid,
+		bool _isBurning
     ) StrategyLPBase(
         _wantAddress,
         _earnedAddress,
         _uniRouterAddress,
         _masterChef,
-        _pid
+        _pid,
+		_isBurning
     ) public {
         earnedToWmaticPath = [address(0x005d47baba0d66083c52009271faf3f50dcc01023c), address(0x000d500b1d8e8ef31e21c99d1db9a6444d3adf1270)];        
         earnedToUsdcPath = [address(0x005d47baba0d66083c52009271faf3f50dcc01023c), address(0x002791bca1f2de4661ed88a30c99a7a9449aa84174)];

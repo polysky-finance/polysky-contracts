@@ -25,13 +25,15 @@ abstract contract StrategySingleBase is StrategyBase {
         address _earnedAddress,
         address _uniRouterAddress,
         address _masterChef,
-        uint256 _pid
+        uint256 _pid,
+		bool _isBurning
     ) StrategyBase(
         _wantAddress,
         _earnedAddress,
         _uniRouterAddress,
         _masterChef,
-        _pid
+        _pid,
+		_isBurning
     )  public {
     }
     
