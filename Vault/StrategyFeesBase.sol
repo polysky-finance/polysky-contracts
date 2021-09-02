@@ -2,6 +2,7 @@
 
 pragma solidity 0.6.12;
 
+// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -39,7 +40,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     uint256 public buyBackRate = 0;
     uint256 public constant feeMaxTotal = 1000;
     uint256 public constant feeMax = 10000; // 100 = 1%
-
+	
     //Withdrawal fees in BP
     uint256 public withdrawalFee = 0; // 0% withdraw fee
     uint256 public constant maxWithdrawalFee = 100; //1%
