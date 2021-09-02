@@ -2,12 +2,12 @@
 
 pragma solidity 0.6.12;
 
-// For interacting with PolycatFinance masterchef
-interface IPolysky {
-    // Transfer want tokens vault -> polycat masterchef
+// For interacting with masterchef
+interface IMasterchef {
+    // Transfer want tokens vault -> masterchef
     function deposit(uint256 pid, uint256 _amount) external;
     
-    // Transfer want tokens polycat masterchef -> vault
+    // Transfer want tokens masterchef -> vault
     function withdraw(uint256 pid, uint256 _amount) external;
 
     //get the amount staked and reward debt for user
