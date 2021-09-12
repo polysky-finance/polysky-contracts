@@ -35,9 +35,9 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
 
     address public constant buyBackAddress = 0x000000000000000000000000000000000000dEaD;
 
-    uint256 public controllerFee = 75;//0.75%
-    uint256 public rewardRate = 25; //0.25%
-    uint256 public buyBackRate = 0;
+    uint256 public controllerFee = 25; //0.25%
+    uint256 public rewardRate = 0; //0%
+    uint256 public buyBackRate = 75; //0.75%
     uint256 public constant feeMaxTotal = 1000;
     uint256 public constant feeMax = 10000; // 100 = 1%
 	
