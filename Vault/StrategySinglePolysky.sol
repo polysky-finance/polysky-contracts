@@ -53,8 +53,8 @@ contract StrategySinglePolysky is StrategySingleBase {
     }
 
     function harvest() internal virtual override{
-        //Polysky has no harvest function but harvest if you try to deposit 0
-        IMasterchef(masterChef).withdraw(pid, 0);
+        //Masterchef has no harvest function but harvest if you try to deposit or withdraw 0 
+        IMasterchef(masterChef).deposit(pid, 0);
     }
 
     function unstake(uint256 _amount) internal virtual override{

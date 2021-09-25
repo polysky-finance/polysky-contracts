@@ -22,11 +22,11 @@ contract StrategySirius is Ownable, ReentrancyGuard, Pausable {
          * We do some fancy math here. Basically, any point in time, the amount of USDC
          * entitled to a user but is pending to be distributed is:
          *
-         *   amount = user.shares / sharesTotal * wantLockedTotal
+         *   amount = user.shares
          *   pending reward = (amount * pool.accUsdPerShare) - user.rewardDebt
          *
          * Whenever a user deposits or withdraws want tokens to a pool. Here's what happens:
-         *   1. The pool's `accUsdPerShare` (and `lastRewardBlock`) gets updated.
+         *   1. The pool's `accUsdPerShare` gets updated.
          *   2. User receives the pending reward sent to his/her address.
          *   3. User's `amount` gets updated.
          *   4. User's `rewardDebt` gets updated.
@@ -36,12 +36,14 @@ contract StrategySirius is Ownable, ReentrancyGuard, Pausable {
     address public constant usdcAddress = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant wantAddress = 0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D;
 
-    address public vaultChefAddress = 0xDf1b5a548D2B3870E01Ff561A5d2aa154eA97c8B;
+    address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
+	address private constant zeroAddress = 0x0000000000000000000000000000000000000000;
+
+    address public vaultChefAddress = 0xe84C5999Cf13C874a9157656c4AA5e29E43d73f4;
     address public govAddress;
 
     mapping(address => UserInfo) public userInfo;
     uint256 public sharesTotal = 0;
-    uint256 public wantLockedTotal = 0; // Will always be the same as sharesTotal
     uint256 public accUsdPerShare = 0;
     
 
@@ -58,73 +60,70 @@ contract StrategySirius is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
-    function deposit(address _userAddress, uint256 _wantAmt) external onlyOwner nonReentrant whenNotPaused returns (uint256) {
-        UserInfo storage user = userInfo[_userAddress];
+    function deposit(uint256 _wantAmt) external nonReentrant whenNotPaused {
+        UserInfo storage user = userInfo[msg.sender];
         
-        uint256 pending = user.shares.mul(accUsdPerShare).div(1e18).sub(user.rewardDebt);
-        if (pending > 0) {
-            if (pending > 0) {
-                IERC20(usdcAddress).safeTransfer(_userAddress, pending);
+		if(user.shares > 0){
+        	uint256 pending = user.shares.mul(accUsdPerShare).div(1e18).sub(user.rewardDebt);
+        	if (pending > 0) {
+                IERC20(usdcAddress).safeTransfer(msg.sender, pending);
+			}
+        }
+         
+        if(_wantAmt > 0){
+			//For want address with transfer tax
+            uint256 beforeBal = IERC20(wantAddress).balanceOf(address(this));
+            IERC20(wantAddress).safeTransferFrom(
+                msg.sender,
+                address(this),
+                _wantAmt
+            );
+            uint256 afterBal = IERC20(wantAddress).balanceOf(address(this));
+        
+            uint256 change = afterBal.sub(beforeBal);
+            if(change < _wantAmt){
+                _wantAmt = change;
             }
-        }
-        
-        //For want address with transfer tax
-        uint256 beforeBal = IERC20(wantAddress).balanceOf(address(this));
-        IERC20(wantAddress).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _wantAmt
-        );
-        uint256 afterBal = IERC20(wantAddress).balanceOf(address(this));
-        
-        uint256 change = afterBal.sub(beforeBal);
-        if(change < _wantAmt){
-            _wantAmt = change;
-        }
 
-        sharesTotal = sharesTotal.add(_wantAmt);
-        wantLockedTotal = sharesTotal;
-        user.shares = user.shares.add(_wantAmt);
-        
-        user.rewardDebt = user.shares.mul(accUsdPerShare).div(1e18);
-
-        return _wantAmt;
+            sharesTotal = sharesTotal.add(_wantAmt);
+            user.shares = user.shares.add(_wantAmt); 
+        }
+		user.rewardDebt = user.shares.mul(accUsdPerShare).div(1e18);
     }
 
-    function withdraw(address _userAddress, uint256 _wantAmt) external onlyOwner nonReentrant returns (uint256) {
+    function withdraw(uint256 _wantAmt) external nonReentrant {
         require(_wantAmt > 0, "_wantAmt <= 0");
-        UserInfo storage user = userInfo[_userAddress];
+        UserInfo storage user = userInfo[msg.sender];
         
-        uint256 pending = user.shares.mul(accUsdPerShare).div(1e18).sub(user.rewardDebt);
-        if (pending > 0) {
-            IERC20(usdcAddress).safeTransfer(_userAddress, pending);
+		if(user.shares > 0){
+        	uint256 pending = user.shares.mul(accUsdPerShare).div(1e18).sub(user.rewardDebt);
+        	if (pending > 0) {
+            	IERC20(usdcAddress).safeTransfer(msg.sender, pending);
+        	}
+		}
+
+        if(_wantAmt > user.shares){
+            _wantAmt = user.shares;
         }
 
-        uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
-        if (_wantAmt > wantAmt) {
-            _wantAmt = wantAmt;
+        uint256 balance = IERC20(wantAddress).balanceOf(address(this));
+        if (_wantAmt > balance) {
+            _wantAmt = balance;
         }
-        
-        sharesTotal = sharesTotal.sub(_wantAmt);
-        wantLockedTotal = sharesTotal;
 
-        IERC20(wantAddress).safeTransfer(vaultChefAddress, _wantAmt);
-        if (_wantAmt > user.shares) {
-            user.shares = 0;
-        } else {
-            user.shares = user.shares.sub(_wantAmt);
+        if(_wantAmt > 0){
+          sharesTotal = sharesTotal.sub(_wantAmt);
+
+          IERC20(wantAddress).safeTransfer(msg.sender, _wantAmt);
+          user.shares = user.shares.sub(_wantAmt);
         }
-        
-        user.rewardDebt = user.shares.mul(accUsdPerShare).div(1e18);
-
-        return _wantAmt;
+		user.rewardDebt = user.shares.mul(accUsdPerShare).div(1e18);
     }
     
     function depositReward(uint256 _depositAmt) external returns (bool) {
+        require(sharesTotal != 0, 'depositReward: not depositor to distribute reward to');
+        
         IERC20(usdcAddress).safeTransferFrom(msg.sender, address(this), _depositAmt);
-        if (sharesTotal == 0) {
-            return false;
-        }
         accUsdPerShare = accUsdPerShare.add(_depositAmt.mul(1e18).div(sharesTotal));
         
         return true;
@@ -139,14 +138,8 @@ contract StrategySirius is Ownable, ReentrancyGuard, Pausable {
     }
 
     function setGov(address _govAddress) external onlyGov {
+        require(_govAddress != zeroAddress && _govAddress != deadAddress, 'setGov: governance address cannot be zero or dead address');
         emit GovChanged(govAddress, _govAddress);
         govAddress = _govAddress;
     }
-	
-    function optimisedEarn() external nonReentrant whenNotPaused onlyOwner {
-    }
-
-    function earn() external nonReentrant whenNotPaused onlyGov{
-    }
-	
 }

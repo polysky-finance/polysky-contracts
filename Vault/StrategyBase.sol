@@ -30,7 +30,6 @@ abstract contract StrategyBase is StrategyFeesBase {
     function unstake(uint256 _amount) internal virtual;
     function earnedToWant() internal virtual;
     function wmaticToWant() internal virtual;
-    function convertDustToEarned() external virtual;
     function emergencyWithdraw() internal virtual;
     function vaultSharesTotal() virtual public view returns (uint256);
 
@@ -96,6 +95,7 @@ abstract contract StrategyBase is StrategyFeesBase {
         if (_wantAmt == 0) return 0;
         
         uint256 sharesBefore = vaultSharesTotal();
+        approve(wantAddress, masterChef, _wantAmt);        
         stake(_wantAmt);
         uint256 sharesAfter = vaultSharesTotal();
         
@@ -204,14 +204,6 @@ abstract contract StrategyBase is StrategyFeesBase {
     function wantLockedTotal() public view returns (uint256) {
         return IERC20(wantAddress).balanceOf(address(this))
         .add(vaultSharesTotal());
-    }
-
-    function _resetAllowances() internal virtual override {
-        IERC20(wantAddress).safeApprove(masterChef, uint256(0));
-        IERC20(wantAddress).safeIncreaseAllowance(
-            masterChef,
-            uint256(-1)
-        );
     }
 
     function panic() external onlyGov {

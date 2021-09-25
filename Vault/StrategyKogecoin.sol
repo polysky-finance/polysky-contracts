@@ -41,18 +41,6 @@ contract StrategyKogecoin is StrategyLPBase {
         token1ToEarnedPath = [address(0x0013748d548d95d78a3c83fe3f32604b4796cffa23)];
         wmaticToToken0Path = [address(0x000d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270)];
         wmaticToToken1Path = [address(0x000d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270), address(0x0013748d548d95d78a3c83fe3f32604b4796cffa23)];
-
-        resetAllowances();
-    }
-
-    function resetAllowances() override public onlyGov{
-        _resetAllowances();
-        StrategyLPBase._resetAllowances();
-        StrategyBase._resetAllowances();
-        StrategyFeesBase._resetAllowances();
-    }
-
-    function _resetAllowances() internal virtual override{
     }
     
     function stake(uint256 _wantAmount) internal virtual override{

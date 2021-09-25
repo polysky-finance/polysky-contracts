@@ -26,14 +26,15 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     address public constant wmaticAddress = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant usdcAddress = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     
-    address public constant rewardAddress = 0xd3D8eC51004711A66BC005D65290A63f8867F183;
+    address public constant rewardAddress = 0xBA1EE36cD444d289cf1f146B7270861063fD8B69;
     address public constant vaultAddress = 0x3c746568A42DaB6f576B94734D0C2199b486F916;
     address public constant feeAddress = 0xC5be13105b002aC1fcA10C066893be051Bbb90d3;
 
-    address public vaultChefAddress = 0xDf1b5a548D2B3870E01Ff561A5d2aa154eA97c8B;
+    address public vaultChefAddress = 0xe84C5999Cf13C874a9157656c4AA5e29E43d73f4;
     address public govAddress;
 
     address public constant buyBackAddress = 0x000000000000000000000000000000000000dEaD;
+	address private constant zeroAddress = 0x0000000000000000000000000000000000000000;
 
     uint256 public controllerFee = 25; //0.25%
     uint256 public rewardRate = 0; //0%
@@ -137,6 +138,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
             
             uint256 usdcConverted = IERC20(usdcAddress).balanceOf(address(this)).sub(usdcBefore);
             
+            approve(usdcAddress, rewardAddress, usdcConverted);
             IStrategySirius(rewardAddress).depositReward(usdcConverted);
         }
     }
@@ -179,39 +181,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
-
-    
-    function _resetAllowances() internal virtual {
-        IERC20(earnedAddress).safeApprove(uniRouterAddress, uint256(0));
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            uint256(-1)
-        );
-
-		IERC20(earnedAddress).safeApprove(quickRouterAddress, uint256(0));
-        IERC20(earnedAddress).safeIncreaseAllowance(
-            quickRouterAddress,
-            uint256(-1)
-        );
-
-        IERC20(usdcAddress).safeApprove(rewardAddress, uint256(0));
-        IERC20(usdcAddress).safeIncreaseAllowance(
-            rewardAddress,
-            uint256(-1)
-        );
-
-        IERC20(wmaticAddress).safeApprove(uniRouterAddress, uint256(0));
-        IERC20(wmaticAddress).safeIncreaseAllowance(
-            uniRouterAddress,
-            uint256(-1)
-        );
-		IERC20(wmaticAddress).safeApprove(quickRouterAddress, uint256(0));
-        IERC20(wmaticAddress).safeIncreaseAllowance(
-            quickRouterAddress,
-            uint256(-1)
-        );
-    }
-    
+   
     function setSettings(
         uint256 _controllerFee,
         uint256 _rewardRate,
@@ -253,6 +223,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     }
 
     function setGov(address _govAddress) external onlyGov {
+        require(_govAddress != zeroAddress && _govAddress != buyBackAddress, 'setGov: governance address cannot be zero or dead address');
         emit GovChanged(govAddress, _govAddress);
         govAddress = _govAddress;
     }
@@ -262,6 +233,9 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         address[] memory _path,
         address _to
     ) internal {
+
+        approve(_path[0], uniRouterAddress, _amountIn);
+
         uint256[] memory amounts = IUniRouter02(uniRouterAddress).getAmountsOut(_amountIn, _path);
         uint256 amountOut = amounts[amounts.length.sub(1)];
 
@@ -279,9 +253,12 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         address[] memory _path,
         address _to
     ) internal {
+        
+        approve(_path[0], quickRouterAddress, _amountIn);
+        
         uint256[] memory amounts = IUniRouter02(quickRouterAddress).getAmountsOut(_amountIn, _path);
         uint256 amountOut = amounts[amounts.length.sub(1)];
-
+        
         IUniRouter02(quickRouterAddress).swapExactTokensForTokens(
             _amountIn,
             amountOut.mul(slippageFactor).div(1000),
@@ -295,6 +272,14 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         (bool success, ) = to.call{value: value}(new bytes(0));
         require(success, 'TransferHelper::safeTransferETH: ETH transfer failed');
     }
+	
+	function approve(address tokenAddress, address spenderAddress, uint256 amount) internal virtual{
+	    IERC20(tokenAddress).safeApprove(spenderAddress, uint256(0));
+        IERC20(tokenAddress).safeIncreaseAllowance(
+            spenderAddress,
+            amount
+        );
+	}
 
     receive() external payable {}
 }

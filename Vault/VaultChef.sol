@@ -112,19 +112,23 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
         if (_wantAmt > balance) {
             _wantAmt = balance;
         }
-        if (_wantAmt > 0) {
+
+        if (_wantAmt > 0) {            
+            uint256 wantBalBefore = IERC20(pool.want).balanceOf(address(this));
             uint256 sharesRemoved = IStrategy(poolInfo[_pid].strat).withdraw(_wantAmt);
+            uint256 wantBalAfter = IERC20(pool.want).balanceOf(address(this));
+
+            uint256 wantBal = wantBalAfter.sub(wantBalBefore);
+            if (wantBal < _wantAmt) {
+                _wantAmt = wantBal;
+            }
 
             if (sharesRemoved > user.shares) {
                 user.shares = 0;
             } else {
                 user.shares = user.shares.sub(sharesRemoved);
             }
-
-            uint256 wantBal = IERC20(pool.want).balanceOf(address(this));
-            if (wantBal < _wantAmt) {
-                _wantAmt = wantBal;
-            }
+            
             pool.want.safeTransfer(msg.sender, _wantAmt);
         }
         emit Withdraw(msg.sender, _pid, _wantAmt);

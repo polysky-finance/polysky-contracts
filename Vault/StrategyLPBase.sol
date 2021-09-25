@@ -96,6 +96,9 @@ abstract contract StrategyLPBase is StrategyBase {
             // Get want tokens, ie. add liquidity
             uint256 token0Amt = IERC20(token0Address).balanceOf(address(this));
             uint256 token1Amt = IERC20(token1Address).balanceOf(address(this));
+            approve(token0Address, uniRouterAddress, token0Amt);
+            approve(token1Address, uniRouterAddress, token1Amt);
+
             if (token0Amt > 0 && token1Amt > 0) {            
                  IUniRouter02(uniRouterAddress).addLiquidity(
                     token0Address,
@@ -111,7 +114,7 @@ abstract contract StrategyLPBase is StrategyBase {
         }
     }
 
-    function convertDustToEarned() external virtual override nonReentrant whenNotPaused {
+    function convertDustToEarned() external nonReentrant whenNotPaused {
         // Converts dust tokens into earned tokens, which will be reinvested on the next earn().
 
         // Converts token0 dust (if any) to earned tokens
@@ -136,18 +139,4 @@ abstract contract StrategyLPBase is StrategyBase {
             );
         }
     }    
-    
-    function _resetAllowances() internal virtual override {
-        IERC20(token0Address).safeApprove(uniRouterAddress, uint256(0));
-        IERC20(token0Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            uint256(-1)
-        );
-
-        IERC20(token1Address).safeApprove(uniRouterAddress, uint256(0));
-        IERC20(token1Address).safeIncreaseAllowance(
-            uniRouterAddress,
-            uint256(-1)
-        );
-    }
 }

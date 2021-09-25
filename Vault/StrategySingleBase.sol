@@ -52,8 +52,7 @@ abstract contract StrategySingleBase is StrategyBase {
         }
     }
 
-    function wmaticToWant() internal virtual override{
-        
+    function wmaticToWant() internal virtual override{        
         if (wmaticAddress != wantAddress) {
             uint256 wmaticAmt = IERC20(wmaticAddress).balanceOf(address(this));
             _safeSwap(
@@ -62,24 +61,5 @@ abstract contract StrategySingleBase is StrategyBase {
                     address(this)
             );
         }
-    }
-
-    function convertDustToEarned() external virtual override nonReentrant whenNotPaused {
-        // Converts dust tokens into earned tokens, which will be reinvested on the next earn().
-
-        uint256 earnedAmt = IERC20(earnedAddress).balanceOf(address(this));
-        if(earnedAmt > 0){
-            if (earnedAddress != wantAddress) {
-                // Swap half earned to token0
-                _safeSwap(
-                    earnedAmt,
-                    earnedToWantPath,
-                    address(this)
-                );
-            }
-        }
-    }    
-    
-    function _resetAllowances() internal virtual override {
-    }
+    }   
 }
