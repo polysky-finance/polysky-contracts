@@ -63,8 +63,6 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
 	
 	bool public isBurning = false;
 
-    function resetAllowances() public virtual;
-
     event DeadlineChanged(uint256 oldDeadline, uint256 newDeadline);
     event GovChanged(address oldGovAddress, address newGovAddress); 
     event SetSettings(
@@ -273,7 +271,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         require(success, 'TransferHelper::safeTransferETH: ETH transfer failed');
     }
 	
-	function approve(address tokenAddress, address spenderAddress, uint256 amount) internal virtual{
+	function approve(address tokenAddress, address spenderAddress, uint256 amount) internal {
 	    IERC20(tokenAddress).safeApprove(spenderAddress, uint256(0));
         IERC20(tokenAddress).safeIncreaseAllowance(
             spenderAddress,

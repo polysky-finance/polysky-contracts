@@ -37,15 +37,6 @@ contract StrategySinglePolysky is StrategySingleBase {
         earnedToSiriusPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
         earnedToWantPath= [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
         wantToEarnedPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
-
-        resetAllowances();
-    }
-
-    function resetAllowances() public virtual override onlyGov{
-        _resetAllowances();
-        StrategySingleBase._resetAllowances();
-        StrategyBase._resetAllowances();
-        StrategyFeesBase._resetAllowances();
     }
 
     function stake(uint256 _wantAmount)  internal override virtual{
@@ -68,8 +59,5 @@ contract StrategySinglePolysky is StrategySingleBase {
     function vaultSharesTotal() public virtual override view returns (uint256) {
         (uint256 amount, ) = IMasterchef(masterChef).userInfo(pid, address(this));
         return amount;
-    }
-
-    function _resetAllowances() internal virtual override {
     }
 }

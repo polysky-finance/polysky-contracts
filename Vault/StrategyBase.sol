@@ -198,7 +198,6 @@ abstract contract StrategyBase is StrategyFeesBase {
     // False alarm
     function unpause() external onlyGov {
         _unpause();
-        resetAllowances();
     }   
 
     function wantLockedTotal() public view returns (uint256) {
