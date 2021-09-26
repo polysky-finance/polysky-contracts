@@ -52,7 +52,6 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
         );
         
         strats[_strat] = true;
-        resetSingleAllowance(poolInfo.length.sub(1));
         emit AddPool(_strat, _desc);
     }
 
@@ -90,6 +89,8 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
             if(_wantAmt > change){
                 _wantAmt = change;
             }
+			
+			approve(pool.want, pool.strat, _wantAmt);
             uint256 sharesAdded = IStrategy(poolInfo[_pid].strat).deposit(_wantAmt);
             user.shares = user.shares.add(sharesAdded);
         }
@@ -138,20 +139,14 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
     function withdrawAll(uint256 _pid) external {
         withdraw(_pid, uint256(-1));
     }
-
-    function resetAllowances() external onlyOwner {
-        for (uint256 i=0; i<poolInfo.length; i++) {
-            PoolInfo storage pool = poolInfo[i];
-            pool.want.safeApprove(pool.strat, uint256(0));
-            pool.want.safeIncreaseAllowance(pool.strat, uint256(-1));
-        }
-    }
-
-    function resetSingleAllowance(uint256 _pid) public onlyOwner {
-        PoolInfo storage pool = poolInfo[_pid];
-        pool.want.safeApprove(pool.strat, uint256(0));
-        pool.want.safeIncreaseAllowance(pool.strat, uint256(-1));
-    }
+	
+	function approve(address tokenAddress, address spenderAddress, uint256 amount) private {
+	    IERC20(tokenAddress).safeApprove(spenderAddress, uint256(0));
+        IERC20(tokenAddress).safeIncreaseAllowance(
+            spenderAddress,
+            amount
+        );
+	}
 
     function earnPools(uint256 pidFrom, uint256 pidTo) external onlyOperator{
         uint256 len = poolInfo.length;
