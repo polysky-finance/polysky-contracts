@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -11,8 +10,9 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./libs/IStrategySirius.sol";
 import "./libs/IUniPair.sol";
 import "./libs/IUniRouter02.sol";
+import "./Operators.sol";
 
-abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
+abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable, Operators {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -31,7 +31,6 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
     address public constant feeAddress = 0xC5be13105b002aC1fcA10C066893be051Bbb90d3;
 
     address public vaultChefAddress = 0xe84C5999Cf13C874a9157656c4AA5e29E43d73f4;
-    address public govAddress;
 
     address public constant buyBackAddress = 0x000000000000000000000000000000000000dEaD;
 	address private constant zeroAddress = 0x0000000000000000000000000000000000000000;
@@ -64,7 +63,6 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
 	bool public isBurning = false;
 
     event DeadlineChanged(uint256 oldDeadline, uint256 newDeadline);
-    event GovChanged(address oldGovAddress, address newGovAddress); 
     event SetSettings(
         uint256 controllerFee,
         uint256 rewardRate,
@@ -74,7 +72,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         uint256 liquiditySlippageFactor
     );
 
-    function changeMinCompoundAmount(uint256 _minWMaticAmountToCompound, uint256 _minEarnedAmountToCompound) external onlyGov{
+    function changeMinCompoundAmount(uint256 _minWMaticAmountToCompound, uint256 _minEarnedAmountToCompound) external onlyOperator{
         minEarnedAmountToCompound = _minEarnedAmountToCompound;
         minWMaticAmountToCompound = _minWMaticAmountToCompound;
     }
@@ -85,7 +83,6 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         address _uniRouterAddress,
 		bool _isBurning
     )  public {
-        govAddress = msg.sender;
 
         wantAddress = _wantAddress;
         earnedAddress = _earnedAddress;
@@ -94,11 +91,6 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
 		isBurning = _isBurning;
 
         transferOwnership(vaultChefAddress);
-    }
-
-    modifier onlyGov() {
-        require(msg.sender == govAddress, "!gov");
-        _;
     }
 
     // To pay for earn function
@@ -187,7 +179,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         uint256 _withdrawalFee,
         uint256 _slippageFactor,
         uint256 _liquiditySlippageFactor
-    ) external virtual onlyGov {
+    ) external virtual onlyOperator {
         if(!isBurning){		    
 			require(_controllerFee.add(_rewardRate).add(_buyBackRate) <= feeMaxTotal, "Max fee of 10%");
 		}else{
@@ -214,18 +206,12 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable {
         );
     }
 
-    function setDeadline(uint256 _deadline) external onlyGov{
+    function setDeadline(uint256 _deadline) external onlyOperator{
         require(_deadline > 10, 'setDeadline: too small');
         emit DeadlineChanged(deadline, _deadline);
         deadline = _deadline;
     }
 
-    function setGov(address _govAddress) external onlyGov {
-        require(_govAddress != zeroAddress && _govAddress != buyBackAddress, 'setGov: governance address cannot be zero or dead address');
-        emit GovChanged(govAddress, _govAddress);
-        govAddress = _govAddress;
-    }
-    
     function _safeSwap(
         uint256 _amountIn,
         address[] memory _path,

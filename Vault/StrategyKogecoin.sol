@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -54,7 +53,7 @@ contract StrategyKogecoin is StrategyLPBase {
     function unstake(uint256 _amount) internal virtual override{
         IMasterchef(masterChef).withdraw(pid, _amount);
     } 
-    function emergencyWithdraw() internal virtual override onlyGov {
+    function emergencyWithdraw() internal virtual override onlyOperator {
         IMasterchef(masterChef).emergencyWithdraw(pid);
     }   
     

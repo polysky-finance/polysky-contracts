@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -140,9 +139,9 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
         withdraw(_pid, uint256(-1));
     }
 	
-	function approve(address tokenAddress, address spenderAddress, uint256 amount) private {
-	    IERC20(tokenAddress).safeApprove(spenderAddress, uint256(0));
-        IERC20(tokenAddress).safeIncreaseAllowance(
+	function approve(IERC20 token, address spenderAddress, uint256 amount) private {
+	    token.safeApprove(spenderAddress, uint256(0));
+        token.safeIncreaseAllowance(
             spenderAddress,
             amount
         );
@@ -164,5 +163,19 @@ contract VaultChef is Ownable, ReentrancyGuard, Operators {
         for (uint256 i = 0; i < len; i++) {
             IStrategy(poolInfo[pids[i]].strat).optimisedEarn();
         }
+    }
+	
+	function updateOperators(address _operator, bool _status) external onlyOwner {
+        for (uint256 i=0; i<poolInfo.length; i++) {
+            PoolInfo storage pool = poolInfo[i];
+			Operators operator = Operators(pool.strat);
+			operator.updateOperator(_operator, _status);
+        }
+    }
+
+    function updateSingleOperator(uint256 _pid, address _operator, bool _status) public onlyOwner {
+        PoolInfo storage pool = poolInfo[_pid];
+		Operators operator = Operators(pool.strat);
+		operator.updateOperator(_operator, _status);
     }
 }

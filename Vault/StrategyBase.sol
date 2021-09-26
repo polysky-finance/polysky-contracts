@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -59,7 +58,7 @@ abstract contract StrategyBase is StrategyFeesBase {
 
     event CompoundCycleChanged(uint256 indexed oldCycle, uint256 indexed newCycle);
     
-    function changeCompoundCycle(uint256 _compoundCycle) external onlyGov nonReentrant whenNotPaused {
+    function changeCompoundCycle(uint256 _compoundCycle) external onlyOperator nonReentrant whenNotPaused {
         emit CompoundCycleChanged(compoundCycle, _compoundCycle);
         compoundCycle = _compoundCycle;
     }
@@ -150,8 +149,8 @@ abstract contract StrategyBase is StrategyFeesBase {
         }
     }
 
-    //Calling directly by gov, for individual calls of the compound function
-    function earn() external nonReentrant whenNotPaused onlyGov{
+    //Calling directly by operator, for individual calls of the compound function
+    function earn() external nonReentrant whenNotPaused onlyOperator{
         _earn();
     }
 
@@ -191,12 +190,12 @@ abstract contract StrategyBase is StrategyFeesBase {
     }
 
     // Emergency!!
-    function pause() external onlyGov {
+    function pause() external onlyOperator {
         _pause();
     }
 
     // False alarm
-    function unpause() external onlyGov {
+    function unpause() external onlyOperator {
         _unpause();
     }   
 
@@ -205,17 +204,17 @@ abstract contract StrategyBase is StrategyFeesBase {
         .add(vaultSharesTotal());
     }
 
-    function panic() external onlyGov {
+    function panic() external onlyOperator {
         _pause();
         unstake(vaultSharesTotal());
     }
 
-    function emergencyPanic() external  virtual onlyGov {
+    function emergencyPanic() external  virtual onlyOperator {
         _pause();
         emergencyWithdraw();
     }
 
-    function unpanic() external onlyGov {
+    function unpanic() external onlyOperator {
         _unpause();
         uint256 wantAmt = IERC20(wantAddress).balanceOf(address(this));
         _farm(wantAmt);

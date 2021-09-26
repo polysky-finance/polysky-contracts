@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.12;
 
-// openzeppelin v3.1.0
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
