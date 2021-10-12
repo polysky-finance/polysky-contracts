@@ -36,6 +36,7 @@ contract StrategySinglePolysky is StrategySingleBase {
         earnedToSiriusPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
         earnedToWantPath= [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
         wantToEarnedPath = [0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D];
+		wmaticToWantPath =[address(0x000d500b1d8e8ef31e21c99d1db9a6444d3adf1270), 0xB1289f48E8d8Ad1532e83A8961f6E8b5a134661D]
     }
 
     function stake(uint256 _wantAmount)  internal override virtual{
