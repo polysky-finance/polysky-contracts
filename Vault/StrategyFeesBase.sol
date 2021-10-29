@@ -30,7 +30,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable, Operat
     address public constant vaultAddress = 0x3c746568A42DaB6f576B94734D0C2199b486F916;
     address public constant feeAddress = 0xC5be13105b002aC1fcA10C066893be051Bbb90d3;
 
-    address public vaultChefAddress = 0xe84C5999Cf13C874a9157656c4AA5e29E43d73f4;
+    address public vaultChefAddress = 0x2e620B2844E43004d095959A31B7ae9f9dbbb830;
 
     address public constant buyBackAddress = 0x000000000000000000000000000000000000dEaD;
 	address private constant zeroAddress = 0x0000000000000000000000000000000000000000;
