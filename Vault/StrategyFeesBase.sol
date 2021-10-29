@@ -26,7 +26,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable, Operat
     address public constant wmaticAddress = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant usdcAddress = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     
-    address public constant rewardAddress = 0xBA1EE36cD444d289cf1f146B7270861063fD8B69;
+    address public constant rewardAddress = 0x87C1Fb68428756CDd04709910AFa601F7DDd5a31;
     address public constant vaultAddress = 0x3c746568A42DaB6f576B94734D0C2199b486F916;
     address public constant feeAddress = 0xC5be13105b002aC1fcA10C066893be051Bbb90d3;
 

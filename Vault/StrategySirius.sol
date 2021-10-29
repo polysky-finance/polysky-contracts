@@ -38,7 +38,7 @@ contract StrategySirius is Ownable, ReentrancyGuard, Pausable {
     address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
 	address private constant zeroAddress = 0x0000000000000000000000000000000000000000;
 
-    address public vaultChefAddress = 0xe84C5999Cf13C874a9157656c4AA5e29E43d73f4;
+    address public vaultChefAddress = 0x2e620B2844E43004d095959A31B7ae9f9dbbb830;
     address public govAddress;
 
     mapping(address => UserInfo) public userInfo;
