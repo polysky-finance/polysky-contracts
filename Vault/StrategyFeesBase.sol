@@ -46,7 +46,7 @@ abstract contract StrategyFeesBase is Ownable, ReentrancyGuard, Pausable, Operat
     uint256 public constant maxWithdrawalFee = 100; //1%
 
     uint256 public slippageFactor = 950; // 5% default slippage tolerance
-    uint256 public liquiditySlippageFactor = 600; // 20% default liqidity add slippage tolerance
+    uint256 public liquiditySlippageFactor = 600; // 40% default liqidity add slippage tolerance
     uint256 public constant slippageFactorUL = 995;
 
     address[] public earnedToWmaticPath;

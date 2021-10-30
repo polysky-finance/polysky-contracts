@@ -17,10 +17,6 @@ abstract contract StrategyLPBase is StrategyBase {
 
     address public token0Address;
     address public token1Address;
-
-    bool internal isWmaticPair = false;
-    //Non wmatic token of token1 and token0
-    address internal token;
     
     address[] public earnedToToken0Path;
     address[] public earnedToToken1Path;
